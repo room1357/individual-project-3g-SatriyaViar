@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'expense_list_screen.dart';
 import 'profile_screen.dart';
+import 'message_screen.dart';
+import 'setting_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -62,8 +64,18 @@ class HomeScreen extends StatelessWidget {
                       MaterialPageRoute(builder: (context) => const ProfileScreen()),
                     );
                   }),
-                  _buildDashboardCard('Pesan', Icons.message, Colors.orange, null),
-                  _buildDashboardCard('Pengaturan', Icons.settings, Colors.purple, null),
+                  _buildDashboardCard('Pesan', Icons.message, Colors.orange, (){
+                    // Navigasi ke MessageScreen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const MessageScreen()),
+                    );
+                  }),
+                  _buildDashboardCard('Pengaturan', Icons.settings, Colors.purple, (){
+                    // Navigasi Ke SettingScreen
+                    Navigator.push(context, 
+                    MaterialPageRoute(builder: (content) => const SettingsScreen()));
+                  }),
                 ],
               ),
             ),
