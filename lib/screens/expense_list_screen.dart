@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pemrograman_mobile/screens/add_expanse_screen.dart';
+import 'package:pemrograman_mobile/utils/formater.dart';
 import '../models/expense.dart';
 
 class ExpenseListScreen extends StatelessWidget {
@@ -76,7 +78,7 @@ class ExpenseListScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Daftar Pengeluaran'),
+        title: Text('Daftar Pengeluaran Uang'),
         backgroundColor: Colors.blue,
       ),
       body: Column(
@@ -175,8 +177,12 @@ class ExpenseListScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Fitur tambah pengeluaran segera hadir!')),
+          Navigator.push(
+            context, 
+            MaterialPageRoute(builder: (context) => AddExpenseScreen(
+              onAddExpense:  (newExpense){}
+              )
+            ),
           );
         },
         backgroundColor: Colors.blue,
@@ -188,7 +194,7 @@ class ExpenseListScreen extends StatelessWidget {
   // Method untuk menghitung total menggunakan fold()
   String _calculateTotal(List<Expense> expenses) {
     double total = expenses.fold(0, (sum, expense) => sum + expense.amount);
-    return 'Rp ${total.toStringAsFixed(0)}';
+    return formatRupiah(total);
   }
 
   // Method untuk mendapatkan warna berdasarkan kategori

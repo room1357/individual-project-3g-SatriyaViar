@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/expense.dart';
 import '../models/expense_manager.dart';
+import '../utils/formater.dart';
 
 class AdvancedExpenseListScreen extends StatefulWidget {
   const AdvancedExpenseListScreen ({super.key});
@@ -9,7 +10,7 @@ class AdvancedExpenseListScreen extends StatefulWidget {
 }
 
 class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
-  List<Expense> expenses = [/* data expenses */];
+  List<Expense> expenses = ExpenseManager.expenses;
   List<Expense> filteredExpenses = [];
   String selectedCategory = 'Semua';
   TextEditingController searchController = TextEditingController();
@@ -142,14 +143,77 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
 
   String _calculateTotal(List<Expense> expenses) {
     double total = expenses.fold(0, (sum, expense) => sum + expense.amount);
-    return 'Rp ${total.toStringAsFixed(0)}';
+    return formatRupiah(total);
   }
 
   String _calculateAverage(List<Expense> expenses) {
     if (expenses.isEmpty) return 'Rp 0';
-    double average = expenses.fold(0, (sum, expense) => sum + expense.amount) / expenses.length;
-    return 'Rp ${average.toStringAsFixed(0)}';
+    double average = expenses.fold(0.0, (sum, expense) => sum + expense.amount) / expenses.length;
+    return formatRupiah(average);
   }
 
-  // Method helper lainnya...
+   // Method untuk mendapatkan warna berdasarkan kategori
+  Color _getCategoryColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'makanan':
+        return Colors.yellow;
+      case 'transportasi':
+        return Colors.green;
+      case 'utilitas':
+        return Colors.purple;
+      case 'hiburan':
+        return Colors.limeAccent;
+      case 'pendidikan':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+   // Method untuk mendapatkan icon berdasarkan kategori
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'makanan':
+        return Icons.restaurant;
+      case 'transportasi':
+        return Icons.directions_car;
+      case 'utilitas':
+        return Icons.home;
+      case 'hiburan':
+        return Icons.movie;
+      case 'pendidikan':
+        return Icons.school;
+      default:
+        return Icons.attach_money;
+    }
+  }
+
+  // Method untuk menampilkan detail pengeluaran dalam dialog
+  void _showExpenseDetails(BuildContext context, Expense expense) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(expense.title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Jumlah: ${expense.formattedAmount}'),
+            SizedBox(height: 8),
+            Text('Kategori: ${expense.category}'),
+            SizedBox(height: 8),
+            Text('Tanggal: ${expense.formattedDate}'),
+            SizedBox(height: 8),
+            Text('Deskripsi: ${expense.description}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
 }

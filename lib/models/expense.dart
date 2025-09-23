@@ -1,3 +1,4 @@
+import '../utils/formater.dart';
 class Expense {
   final String id;
   final String title;
@@ -16,10 +17,10 @@ class Expense {
   });
 
   // Getter untuk format tampilan mata uang
-  String get formattedAmount => 'Rp ${amount.toStringAsFixed(0)}';
+  String get formattedAmount => formatRupiah(amount);
   
   // Getter untuk format tampilan tanggal
   String get formattedDate {
-    return '${date.day}/${date.month}/${date.year}';
+    return formatTanggal(date);
   }
 }
