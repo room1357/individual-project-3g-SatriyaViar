@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pemrograman_mobile/screens/add_expanse_screen.dart';
 import 'package:pemrograman_mobile/utils/formater.dart';
+import '../helpers/loopingexample.dart';
 import '../models/expense.dart';
 
 class ExpenseListScreen extends StatelessWidget {
@@ -103,7 +104,7 @@ class ExpenseListScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  _calculateTotal(expenses),
+                  formatRupiah(LoopingExamples.calculateTotalFold(expenses)),
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -180,7 +181,8 @@ class ExpenseListScreen extends StatelessWidget {
           Navigator.push(
             context, 
             MaterialPageRoute(builder: (context) => AddExpenseScreen(
-              onAddExpense:  (newExpense){}
+              onAddExpense: (context){
+              }
               )
             ),
           );
@@ -192,10 +194,10 @@ class ExpenseListScreen extends StatelessWidget {
   }
 
   // Method untuk menghitung total menggunakan fold()
-  String _calculateTotal(List<Expense> expenses) {
-    double total = expenses.fold(0, (sum, expense) => sum + expense.amount);
-    return formatRupiah(total);
-  }
+  // String _calculateTotal(List<Expense> expenses) {
+  //   double total = expenses.fold(0, (sum, expense) => sum + expense.amount);
+  //   return formatRupiah(total);
+  // }
 
   // Method untuk mendapatkan warna berdasarkan kategori
   Color _getCategoryColor(String category) {
@@ -257,6 +259,11 @@ class ExpenseListScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: Text('Tutup'),
           ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Edit'),
+          ) 
+
         ],
       ),
     );

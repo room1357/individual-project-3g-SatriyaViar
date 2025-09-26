@@ -9,7 +9,12 @@ String formatRupiah(double value, {int decimalDigit = 0}){
   return formater.format(value);
 }
 
+// String formatTanggal(DateTime value){
+//   final formater = DateFormat('dd-mm-yyyy');
+//   return formater.format(value);
+// }
+
 String formatTanggal(DateTime value){
-  final formater = DateFormat('dd-MM-yyyy');
-  return formater.format(value);
+  var formater = DateFormat('dd-MMM-yyyy');
+  return formater.format(value);  
 }

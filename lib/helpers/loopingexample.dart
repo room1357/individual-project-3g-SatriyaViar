@@ -1,8 +1,7 @@
-import '../models/expense_manager.dart';
 import '../models/expense.dart';
 
 class LoopingExamples {
-  static List<Expense> expenses = ExpenseManager.expenses;
+  static List<Expense> expenses = expenses;
 
   // 1. Menghitung total dengan berbagai cara
   
