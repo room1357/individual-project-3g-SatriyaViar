@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pemrograman_mobile/utils/formater.dart';
 import '../models/expense.dart';
+import '../models/category_manager.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final Function(Expense) onAddExpense;
@@ -57,7 +58,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Tambah Pengeluaran",style: TextStyle(fontWeight: FontWeight.bold),),
+        title: const Text(
+          "Tambah Pengeluaran",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.blue,
       ),
       body: Padding(
@@ -101,10 +105,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 validator: (val) {
                   if (val == null || val.isEmpty) {
                     return "Jumlah wajib diisi";
-                  }if (double.tryParse(val) == null) {
+                  }
+                  if (double.tryParse(val) == null) {
                     return "Jumlah harus berupa angka";
                   }
-                  if (double.parse(val)<= 0) {
+                  if (double.parse(val) <= 0) {
                     return "Jumlah harus lebih besar dari 0";
                   }
                   return null;
@@ -128,18 +133,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               const SizedBox(height: 16),
               // Dropdown Kategori
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 items:
-                    [
-                          'Makanan',
-                          'Transportasi',
-                          'Utilitas',
-                          'Hiburan',
-                          'Pendidikan',
-                        ]
+                    CategoryManager.categories
                         .map(
-                          (cat) =>
-                              DropdownMenuItem(value: cat, child: Text(cat)),
+                          (cat) => DropdownMenuItem(
+                            value: cat.name,
+                            child: Text(cat.name),
+                          ),
                         )
                         .toList(),
                 onChanged:
@@ -205,7 +206,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   ),
                   child: const Text(
                     "Simpan",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
                   ),
                 ),
               ),

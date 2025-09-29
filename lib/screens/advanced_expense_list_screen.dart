@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:pemrograman_mobile/screens/add_expanse_screen.dart';
 import 'package:pemrograman_mobile/screens/edit_expanse.dart';
 import '../models/expense.dart';
@@ -51,7 +50,7 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
           ),
 
           // Category filter
-          Container(
+          SizedBox(
             height: 50,
             child: ListView(
               scrollDirection: Axis.horizontal,
