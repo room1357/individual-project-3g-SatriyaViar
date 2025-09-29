@@ -113,4 +113,9 @@ class ExpenseManager {
     
     return total / uniqueDays.length;
   }
+
+  // READ: ambil semua expense
+  static List<Expense> getAllExpenses() {
+    return List.unmodifiable(expenses);
+  }
 }

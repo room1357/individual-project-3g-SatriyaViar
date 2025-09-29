@@ -1,8 +1,10 @@
-import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:pemrograman_mobile/models/category_manager.dart';
+import 'package:pemrograman_mobile/models/expense_manager.dart';
 import 'package:pemrograman_mobile/screens/advanced_expense_list_screen.dart';
 import 'package:pemrograman_mobile/screens/category_screen.dart';
+import 'package:pemrograman_mobile/screens/statistik_screen.dart';
 import 'login_screen.dart';
 import 'expense_list_screen.dart';
 import 'profile_screen.dart';
@@ -52,45 +54,104 @@ class HomeScreen extends StatelessWidget {
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
                 children: [
-                  _buildDashboardCard('Pengeluaran', Icons.attach_money, Colors.green, () {
-                    // Navigasi ke ExpenseListScreen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ExpenseListScreen()),
-                    );
-                  }),_buildDashboardCard('Advanced Pengeluaran', Icons.attach_money, Colors.lightGreen, () {
-                    // Navigasi ke ExpenseListScreen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AdvancedExpenseListScreen()),
-                    );
-                  }),
-                  _buildDashboardCard('Kategori', Icons.category, Colors.red, () {
-                    // Navigasi ke CategoryScreen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const CategoryScreen()),
-                    );
-                  }),
-                  _buildDashboardCard('Profil', Icons.person, Colors.blue, (){
+                  _buildDashboardCard(
+                    'Pengeluaran',
+                    Icons.attach_money,
+                    Colors.green,
+                    () {
+                      // Navigasi ke ExpenseListScreen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ExpenseListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDashboardCard(
+                    'Advanced Pengeluaran',
+                    Icons.attach_money,
+                    Colors.lightGreen,
+                    () {
+                      // Navigasi ke ExpenseListScreen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => const AdvancedExpenseListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDashboardCard(
+                    'Kategori',
+                    Icons.category,
+                    Colors.red,
+                    () {
+                      // Navigasi ke CategoryScreen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CategoryScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDashboardCard('Profil', Icons.person, Colors.blue, () {
                     // Navigasi ke ProfileScreen
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                      ),
                     );
                   }),
-                  _buildDashboardCard('Pesan', Icons.message, Colors.orange, (){
-                    // Navigasi ke MessageScreen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const MessageScreen()),
-                    );
-                  }),
-                  _buildDashboardCard('Pengaturan', Icons.settings, Colors.purple, (){
-                    // Navigasi Ke SettingScreen
-                    Navigator.push(context, 
-                    MaterialPageRoute(builder: (content) => const SettingsScreen()));
-                  }),
+                  _buildDashboardCard(
+                    'Statistik',
+                    Icons.bar_chart,
+                    Colors.purple,
+                    () {
+                      // Navigasi ke StatisticsScreen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => StatisticsScreen(
+                                expenses: ExpenseManager.getAllExpenses(),
+                                categories: CategoryManager.getAllCategories(),
+                              ),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDashboardCard(
+                    'Pesan',
+                    Icons.message,
+                    Colors.orange,
+                    () {
+                      // Navigasi ke MessageScreen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MessageScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDashboardCard(
+                    'Pengaturan',
+                    Icons.settings,
+                    Colors.purple,
+                    () {
+                      // Navigasi Ke SettingScreen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (content) => const SettingsScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -100,34 +161,42 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDashboardCard(String title, IconData icon, Color color, VoidCallback? onTap) {
+  Widget _buildDashboardCard(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback? onTap,
+  ) {
     return Card(
       elevation: 4,
       child: Builder(
-        builder: (context) => InkWell(
-          onTap: onTap ?? () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Fitur $title segera hadir!')),
-            );
-          },
-          child: Container(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 48, color: color),
-                SizedBox(height: 12),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+        builder:
+            (context) => InkWell(
+              onTap:
+                  onTap ??
+                  () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Fitur $title segera hadir!')),
+                    );
+                  },
+              child: Container(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: 48, color: color),
+                    SizedBox(height: 12),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
       ),
     );
   }

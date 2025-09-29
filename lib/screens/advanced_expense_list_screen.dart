@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pemrograman_mobile/screens/add_expanse_screen.dart';
 import 'package:pemrograman_mobile/screens/edit_expanse.dart';
+import 'package:pemrograman_mobile/utils/category_utils.dart';
 import '../models/expense.dart';
 import '../models/expense_manager.dart';
 import '../utils/formater.dart';
@@ -115,11 +116,13 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
                           ),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: _getCategoryColor(
+                              backgroundColor: CategoryUtils.getCategoryColor(
                                 expense.category,
                               ),
                               child: Icon(
-                                _getCategoryIcon(expense.category),
+                                CategoryUtils.getCategoryIcon(
+                                  expense.category,
+                                ), // ✅ pakai utils
                                 color: Colors.white,
                               ),
                             ),
@@ -211,42 +214,6 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
         expenses.fold(0.0, (sum, expense) => sum + expense.amount) /
         expenses.length;
     return formatRupiah(average);
-  }
-
-  // Method untuk mendapatkan warna berdasarkan kategori
-  Color _getCategoryColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'makanan':
-        return Colors.yellow;
-      case 'transportasi':
-        return Colors.green;
-      case 'utilitas':
-        return Colors.purple;
-      case 'hiburan':
-        return Colors.limeAccent;
-      case 'pendidikan':
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  // Method untuk mendapatkan icon berdasarkan kategori
-  IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'makanan':
-        return Icons.restaurant;
-      case 'transportasi':
-        return Icons.directions_car;
-      case 'utilitas':
-        return Icons.home;
-      case 'hiburan':
-        return Icons.movie;
-      case 'pendidikan':
-        return Icons.school;
-      default:
-        return Icons.attach_money;
-    }
   }
 
   // Method untuk menampilkan detail pengeluaran dalam dialog
@@ -351,22 +318,25 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       ElevatedButton.icon(
-                        onPressed: ()  {
+                        onPressed: () {
                           Navigator.pop(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: 
-                              (context) => EditExpenseScreen(
-                                expense: expense,
-                                onEditExpense: (updatedExpense) {
-                                  setState(() {
-                                    final index = expenses.indexWhere((e) => e.id == expense.id);
-                                    if (index != -1) {
-                                      expenses[index] = updatedExpense;
-                                    }
-                                  });
-                                }),
+                              builder:
+                                  (context) => EditExpenseScreen(
+                                    expense: expense,
+                                    onEditExpense: (updatedExpense) {
+                                      setState(() {
+                                        final index = expenses.indexWhere(
+                                          (e) => e.id == expense.id,
+                                        );
+                                        if (index != -1) {
+                                          expenses[index] = updatedExpense;
+                                        }
+                                      });
+                                    },
+                                  ),
                             ),
                           );
                         },
@@ -425,7 +395,6 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
                 TextSpan(
                   text: "$label: ",
                   style: const TextStyle(fontWeight: FontWeight.bold),
-                  
                 ),
                 TextSpan(
                   text: value,

@@ -97,7 +97,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
               if (_formKey.currentState!.validate()) {
                 setState(() {
                   if (category == null) {
-                    // Tambah
+                    // CREATE
                     CategoryManager.addCategory(
                       Category(
                         id: DateTime.now()
@@ -108,7 +108,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       ),
                     );
                   } else {
-                    // Edit
+                    // UPDATE
                     CategoryManager.editCategory(
                       Category(
                         id: category.id,
@@ -159,8 +159,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
               });
               Navigator.pop(context);
             },
-            icon: const Icon(Icons.delete, color: Colors.white,),
-            label: const Text("Hapus", style: TextStyle(color: Colors.black)),
+            icon: const Icon(Icons.delete, color: Colors.white),
+            label: const Text("Hapus", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -169,7 +169,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = CategoryManager.categories;
+    final categories = CategoryManager.getAllCategories();
 
     return Scaffold(
       appBar: AppBar(

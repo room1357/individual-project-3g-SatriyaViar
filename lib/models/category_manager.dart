@@ -2,7 +2,7 @@
 import 'category.dart';
 
 class CategoryManager {
-  static List<Category> categories = [
+  static final List<Category> _categories = [
     Category(
       id: '1',
       name: 'Makanan',
@@ -30,19 +30,24 @@ class CategoryManager {
     ),
   ];
 
-  // Cari kategori berdasarkan ID
+  // READ: ambil semua kategori
+  static List<Category> getAllCategories() {
+    return List.unmodifiable(_categories); // tidak bisa diubah dari luar
+  }
+
+  // READ: cari kategori berdasarkan ID
   static Category? getCategoryById(String id) {
     try {
-      return categories.firstWhere((category) => category.id == id);
+      return _categories.firstWhere((category) => category.id == id);
     } catch (e) {
       return null;
     }
   }
 
-  // Cari kategori berdasarkan nama
+  // READ: cari kategori berdasarkan nama
   static Category? getCategoryByName(String name) {
     try {
-      return categories.firstWhere(
+      return _categories.firstWhere(
         (category) => category.name.toLowerCase() == name.toLowerCase(),
       );
     } catch (e) {
@@ -50,21 +55,29 @@ class CategoryManager {
     }
   }
 
-  // Menambah kategori baru
+  // CREATE: tambah kategori baru
   static void addCategory(Category category) {
-    categories.add(category);
+    // cek apakah id sudah ada
+    if (_categories.any((c) => c.id == category.id)) {
+      throw Exception("Kategori dengan ID ${category.id} sudah ada!");
+    }
+    _categories.add(category);
   }
 
-  // Menghapus kategori
-  static void removeCategory(String id) {
-    categories.removeWhere((category) => category.id == id);
-  }
-
-  // Mengedit Kategori
+  // UPDATE: edit kategori berdasarkan ID
   static void editCategory(Category category) {
-    final index = categories.indexWhere((c) => c.id == category.id);
+    final index = _categories.indexWhere((c) => c.id == category.id);
     if (index != -1) {
-      categories[index] = category;
+      _categories[index] = category;
+    } else {
+      throw Exception("Kategori dengan ID ${category.id} tidak ditemukan!");
     }
   }
+
+  // DELETE: hapus kategori
+  static void removeCategory(String id) {
+    _categories.removeWhere((category) => category.id == id);
+  }
+
+  
 }
