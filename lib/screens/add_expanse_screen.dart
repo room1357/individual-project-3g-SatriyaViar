@@ -57,9 +57,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Tambah Pengeluaran"),
+        title: const Text("Tambah Pengeluaran",style: TextStyle(fontWeight: FontWeight.bold),),
         backgroundColor: Colors.blue,
-        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
