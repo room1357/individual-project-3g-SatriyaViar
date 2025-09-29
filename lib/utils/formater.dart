@@ -1,10 +1,10 @@
 import 'package:intl/intl.dart';
 
-String formatRupiah(double value, {int decimalDigit = 0}){
+String formatRupiah(double value, {double decimalDigit = 0}){
   final formater = NumberFormat.currency(
     locale: 'id',
     symbol: 'Rp ',
-    decimalDigits: decimalDigit
+    decimalDigits: 0
   );
   return formater.format(value);
 }

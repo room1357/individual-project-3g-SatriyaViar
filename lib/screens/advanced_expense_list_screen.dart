@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pemrograman_mobile/screens/add_expanse_screen.dart';
+import 'package:pemrograman_mobile/screens/edit_expanse.dart';
 import '../models/expense.dart';
 import '../models/expense_manager.dart';
 import '../helpers/loopingexample.dart';
@@ -254,28 +255,191 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: Text(expense.title),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue.shade400, Colors.indigo.shade400],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Judul
+                  Center(
+                    child: Text(
+                      expense.title.toUpperCase(),
+                      textAlign: TextAlign.justify,
+                      style: const TextStyle(
+                        fontFamily: 'Lucida Sans',
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Card konten
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: DefaultTextStyle(
+                      style: const TextStyle(
+                        fontFamily: 'Lucida Sans',
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                      textAlign: TextAlign.justify,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _infoRow(
+                            Icons.attach_money,
+                            "Jumlah",
+                            expense.formattedAmount,
+                            valueColor: Colors.green,
+                          ),
+                          const Divider(),
+                          _infoRow(
+                            Icons.category,
+                            "Kategori",
+                            expense.category,
+                            valueColor: Colors.blueGrey,
+                          ),
+                          const Divider(),
+                          _infoRow(
+                            Icons.date_range,
+                            "Tanggal",
+                            expense.formattedDate,
+                            valueColor: Colors.deepPurple,
+                          ),
+                          const Divider(),
+                          _infoRow(
+                            Icons.description,
+                            "Deskripsi",
+                            expense.description,
+                            valueColor: Colors.black87,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Tombol aksi
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: ()  {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: 
+                              (context) => EditExpenseScreen(
+                                expense: expense,
+                                onEditExpense: (updatedExpense) {
+                                  setState(() {
+                                    final index = expenses.indexWhere((e) => e.id == expense.id);
+                                    if (index != -1) {
+                                      expenses[index] = updatedExpense;
+                                    }
+                                  });
+                                }),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.edit, size: 18),
+                        label: const Text("Edit"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, size: 18),
+                        label: const Text("Tutup"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+
+  // Widget helper biar rapi
+  Widget _infoRow(
+    IconData icon,
+    String label,
+    String value, {
+    Color valueColor = Colors.black,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: Colors.deepPurple, size: 20),
+        const SizedBox(width: 8),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              style: const TextStyle(
+                fontFamily: 'Lucida Sans',
+                fontSize: 15,
+                color: Colors.black87,
+              ),
               children: [
-                Text('Jumlah: ${expense.formattedAmount}'),
-                SizedBox(height: 8),
-                Text('Kategori: ${expense.category}'),
-                SizedBox(height: 8),
-                Text('Tanggal: ${expense.formattedDate}'),
-                SizedBox(height: 8),
-                Text('Deskripsi: ${expense.description}'),
+                TextSpan(
+                  text: "$label: ",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  
+                ),
+                TextSpan(
+                  text: value,
+                  style: TextStyle(
+                    color: valueColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Tutup'),
-              ),
-            ],
           ),
+        ),
+      ],
     );
   }
 }

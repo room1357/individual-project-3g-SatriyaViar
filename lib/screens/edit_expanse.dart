@@ -2,37 +2,54 @@ import 'package:flutter/material.dart';
 import 'package:pemrograman_mobile/utils/formater.dart';
 import '../models/expense.dart';
 
-class AddExpenseScreen extends StatefulWidget {
-  final Function(Expense) onAddExpense;
+class EditExpenseScreen extends StatefulWidget {
+  final Expense expense; // data lama
+  final Function(Expense) onEditExpense; // callback untuk update
 
-  const AddExpenseScreen({super.key, required this.onAddExpense});
+  const EditExpenseScreen({
+    super.key,
+    required this.expense,
+    required this.onEditExpense,
+  });
 
   @override
-  State<AddExpenseScreen> createState() => _AddExpenseScreenState();
+  State<EditExpenseScreen> createState() => _EditExpenseScreenState();
 }
 
-class _AddExpenseScreenState extends State<AddExpenseScreen> {
+class _EditExpenseScreenState extends State<EditExpenseScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final _titleController = TextEditingController();
-  final _amountController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  late TextEditingController _titleController;
+  late TextEditingController _amountController;
+  late TextEditingController _descriptionController;
 
-  String _selectedCategory = 'Makanan';
-  DateTime _selectedDate = DateTime.now();
+  late String _selectedCategory;
+  late DateTime _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.expense.title);
+    _amountController =
+        TextEditingController( text: widget.expense.amount.toString());
+    _descriptionController =
+        TextEditingController(text: widget.expense.description);
+    _selectedCategory = widget.expense.category;
+    _selectedDate = widget.expense.date;
+  }
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
       try {
-        print("=== SUBMIT DEBUG ===");
+        print("=== EDIT DEBUG ===");
         print("Title: ${_titleController.text}");
         print("Amount: ${_amountController.text}");
         print("Category: $_selectedCategory");
         print("Date: $_selectedDate");
         print("Description: ${_descriptionController.text}");
 
-        final newExpense = Expense(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+        final updatedExpense = Expense(
+          id: widget.expense.id, // id tetap sama!
           title: _titleController.text,
           amount: double.parse(_amountController.text),
           category: _selectedCategory,
@@ -40,16 +57,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           description: _descriptionController.text,
         );
 
-        print("✅ New expense created: $newExpense");
+        print("✅ Expense updated: $updatedExpense");
 
-        widget.onAddExpense(newExpense);
+        widget.onEditExpense(updatedExpense);
         Navigator.pop(context);
       } catch (e, stack) {
-        print("❌ Error saat submit: $e");
+        print("❌ Error saat edit: $e");
         print(stack);
       }
     } else {
-      print("⚠️ Form tidak valid");
+      print("⚠️ Form edit tidak valid");
     }
   }
 
@@ -57,8 +74,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Tambah Pengeluaran"),
-        backgroundColor: Colors.blue,
+        title: const Text("Edit Pengeluaran"),
+        backgroundColor: Colors.orange,
         elevation: 0,
       ),
       body: Padding(
@@ -79,11 +96,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   fillColor: Colors.grey[100],
                   prefixIcon: const Icon(Icons.edit),
                 ),
-                validator:
-                    (val) =>
-                        val == null || val.isEmpty
-                            ? "Nama Pengeluaran wajib diisi"
-                            : null,
+                validator: (val) => val == null || val.isEmpty
+                    ? "Nama Pengeluaran wajib diisi"
+                    : null,
               ),
               const SizedBox(height: 16),
               // Input Jumlah
@@ -102,10 +117,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 validator: (val) {
                   if (val == null || val.isEmpty) {
                     return "Jumlah wajib diisi";
-                  }if (double.tryParse(val) == null) {
+                  }
+                  if (double.tryParse(val) == null) {
                     return "Jumlah harus berupa angka";
                   }
-                  if (double.parse(val)<= 0) {
+                  if (double.parse(val) <= 0) {
                     return "Jumlah harus lebih besar dari 0";
                   }
                   return null;
@@ -130,23 +146,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               // Dropdown Kategori
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
-                items:
-                    [
-                          'Makanan',
-                          'Transportasi',
-                          'Utilitas',
-                          'Hiburan',
-                          'Pendidikan',
-                        ]
-                        .map(
-                          (cat) =>
-                              DropdownMenuItem(value: cat, child: Text(cat)),
-                        )
-                        .toList(),
-                onChanged:
-                    (val) => setState(() {
-                      _selectedCategory = val!;
-                    }),
+                items: [
+                  'Makanan',
+                  'Transportasi',
+                  'Utilitas',
+                  'Hiburan',
+                  'Pendidikan',
+                ]
+                    .map(
+                      (cat) => DropdownMenuItem(value: cat, child: Text(cat)),
+                    )
+                    .toList(),
+                onChanged: (val) => setState(() {
+                  _selectedCategory = val!;
+                }),
                 decoration: InputDecoration(
                   labelText: "Kategori",
                   border: OutlineInputBorder(
@@ -158,7 +171,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
               // Date Picker
               Row(
                 children: [
@@ -191,7 +203,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              // Tombol Simpan
+              // Tombol Simpan Perubahan
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -201,12 +213,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    backgroundColor: Colors.blue,
+                    backgroundColor: Colors.orange,
                     elevation: 3,
                   ),
                   child: const Text(
-                    "Simpan",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                    "Simpan Perubahan",
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black),
                   ),
                 ),
               ),
