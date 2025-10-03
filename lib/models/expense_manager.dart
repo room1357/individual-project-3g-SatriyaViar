@@ -1,81 +1,92 @@
+import 'category.dart' as my;
 import 'expense.dart';
 
 class ExpenseManager {
   static List<Expense> expenses = [
-      Expense(
-        id: '1',
-        title: 'Belanja Bulanan',
-        amount: 150000,
-        category: 'Makanan',
-        date: DateTime(2024, 9, 15),
-        description: 'Belanja kebutuhan bulanan di supermarket',
-      ),
-      Expense(
-        id: '2',
-        title: 'Bensin Motor',
-        amount: 50000,
-        category: 'Transportasi',
-        date: DateTime(2024, 9, 14),
-        description: 'Isi bensin motor untuk transportasi',
-      ),
-      Expense(
-        id: '3',
-        title: 'Kopi di Cafe',
-        amount: 25000,
-        category: 'Makanan',
-        date: DateTime(2024, 9, 14),
-        description: 'Ngopi pagi dengan teman',
-      ),
-      Expense(
-        id: '4',
-        title: 'Tagihan Internet',
-        amount: 300000,
-        category: 'Utilitas',
-        date: DateTime(2024, 9, 13),
-        description: 'Tagihan internet bulanan',
-      ),
-      Expense(
-        id: '5',
-        title: 'Tiket Bioskop',
-        amount: 100000,
-        category: 'Hiburan',
-        date: DateTime(2024, 9, 12),
-        description: 'Nonton film weekend bersama keluarga',
-      ),
-      Expense(
-        id: '6',
-        title: 'Beli Buku',
-        amount: 75000,
-        category: 'Pendidikan',
-        date: DateTime(2024, 9, 11),
-        description: 'Buku pemrograman untuk belajar',
-      ),
-      Expense(
-        id: '7',
-        title: 'Makan Siang',
-        amount: 35000,
-        category: 'Makanan',
-        date: DateTime(2024, 9, 11),
-        description: 'Makan siang di restoran',
-      ),
-      Expense(
-        id: '8',
-        title: 'Ongkos Bus',
-        amount: 10000,
-        category: 'Transportasi',
-        date: DateTime(2024, 9, 10),
-        description: 'Ongkos perjalanan harian ke kampus',
-      ),
-    ];
+    Expense(
+      id: '1',
+      title: 'Belanja Bulanan',
+      amount: 150000,
+      category: 'Makanan',
+      date: DateTime(2024, 9, 15),
+      description: 'Belanja kebutuhan bulanan di supermarket',
+    ),
+    Expense(
+      id: '2',
+      title: 'Bensin Motor',
+      amount: 50000,
+      category: 'Transportasi',
+      date: DateTime(2024, 9, 14),
+      description: 'Isi bensin motor untuk transportasi',
+    ),
+    Expense(
+      id: '3',
+      title: 'Kopi di Cafe',
+      amount: 25000,
+      category: 'Makanan',
+      date: DateTime(2024, 9, 14),
+      description: 'Ngopi pagi dengan teman',
+    ),
+    Expense(
+      id: '4',
+      title: 'Tagihan Internet',
+      amount: 300000,
+      category: 'Utilitas',
+      date: DateTime(2024, 9, 13),
+      description: 'Tagihan internet bulanan',
+    ),
+    Expense(
+      id: '5',
+      title: 'Tiket Bioskop',
+      amount: 100000,
+      category: 'Hiburan',
+      date: DateTime(2024, 9, 12),
+      description: 'Nonton film weekend bersama keluarga',
+    ),
+    Expense(
+      id: '6',
+      title: 'Beli Buku',
+      amount: 75000,
+      category: 'Pendidikan',
+      date: DateTime(2024, 9, 11),
+      description: 'Buku pemrograman untuk belajar',
+    ),
+    Expense(
+      id: '7',
+      title: 'Makan Siang',
+      amount: 35000,
+      category: 'Makanan',
+      date: DateTime(2024, 9, 11),
+      description: 'Makan siang di restoran',
+    ),
+    Expense(
+      id: '8',
+      title: 'Ongkos Bus',
+      amount: 10000,
+      category: 'Transportasi',
+      date: DateTime(2024, 9, 10),
+      description: 'Ongkos perjalanan harian ke kampus',
+    ),
+  ];
 
   // 1. Mendapatkan total pengeluaran per kategori
-  static Map<String, double> getTotalByCategory(List<Expense> expenses) {
-    Map<String, double> result = {};
-    for (var expense in expenses) {
-      result[expense.category] = (result[expense.category] ?? 0) + expense.amount;
-    }
-    return result;
+  static Map<String, double> getTotalByCategory(
+  List<Expense> expenses,
+  List<my.Category> categories
+) {
+  // Inisialisasi semua kategori dengan 0
+  Map<String, double> result = {
+    for (var cat in categories) cat.name: 0.0,
+  };
+
+  // Tambahkan jumlah expense sesuai kategori
+  for (var expense in expenses) {
+    result[expense.category] =
+        (result[expense.category] ?? 0) + expense.amount;
   }
+
+  return result;
+}
 
   // 2. Mendapatkan pengeluaran tertinggi
   static Expense? getHighestExpense(List<Expense> expenses) {
@@ -84,38 +95,92 @@ class ExpenseManager {
   }
 
   // 3. Mendapatkan pengeluaran bulan tertentu
-  static List<Expense> getExpensesByMonth(List<Expense> expenses, int month, int year) {
-    return expenses.where((expense) => 
-      expense.date.month == month && expense.date.year == year
-    ).toList();
+  static List<Expense> getExpensesByMonth(
+    List<Expense> expenses,
+    int month,
+    int year,
+  ) {
+    return expenses
+        .where(
+          (expense) => expense.date.month == month && expense.date.year == year,
+        )
+        .toList();
   }
 
   // 4. Mencari pengeluaran berdasarkan kata kunci
   static List<Expense> searchExpenses(List<Expense> expenses, String keyword) {
     String lowerKeyword = keyword.toLowerCase();
-    return expenses.where((expense) =>
-      expense.title.toLowerCase().contains(lowerKeyword) ||
-      expense.description.toLowerCase().contains(lowerKeyword) ||
-      expense.category.toLowerCase().contains(lowerKeyword)
-    ).toList();
+    return expenses
+        .where(
+          (expense) =>
+              expense.title.toLowerCase().contains(lowerKeyword) ||
+              expense.description.toLowerCase().contains(lowerKeyword) ||
+              expense.category.toLowerCase().contains(lowerKeyword),
+        )
+        .toList();
   }
 
   // 5. Mendapatkan rata-rata pengeluaran harian
   static double getAverageDaily(List<Expense> expenses) {
     if (expenses.isEmpty) return 0;
-    
+
     double total = expenses.fold(0, (sum, expense) => sum + expense.amount);
-    
+
     // Hitung jumlah hari unik
-    Set<String> uniqueDays = expenses.map((expense) => 
-      '${expense.date.year}-${expense.date.month}-${expense.date.day}'
-    ).toSet();
-    
+    Set<String> uniqueDays =
+        expenses
+            .map(
+              (expense) =>
+                  '${expense.date.year}-${expense.date.month}-${expense.date.day}',
+            )
+            .toSet();
+
     return total / uniqueDays.length;
+  }
+
+  // 6. Mendapatkan total pengeluaran
+  static double calculateTotal(List<Expense> expenses) {
+    return expenses.fold(0, (sum, expense) => sum + expense.amount);
+  }
+
+  // 7. Mendapatkan rata-rata pengeluaran
+  static double calculateAverage(List<Expense> expenses) {
+    if (expenses.isEmpty) return 0;
+    double average =
+        expenses.fold(0.0, (sum, expense) => sum + expense.amount) /
+        expenses.length;
+    return (average);
+  }
+
+  // 8. Mendapatkan total pengeluaran per hari
+  static Map<DateTime, double> getTotalByDay(List<Expense> expenses) {
+    final Map<DateTime, double> totals = {};
+    for (var expense in expenses) {
+      final day = DateTime(
+        expense.date.year,
+        expense.date.month,
+        expense.date.day,
+      );
+      totals[day] = (totals[day] ?? 0) + expense.amount;
+    }
+    return totals;
   }
 
   // READ: ambil semua expense
   static List<Expense> getAllExpenses() {
     return List.unmodifiable(expenses);
   }
+
+  // 9. Mendapatkan total pengeluaran per bulan
+  // 9. Mendapatkan total pengeluaran per bulan
+static Map<DateTime, double> getTotalByMonth(List<Expense> expenses) {
+  final Map<DateTime, double> totals = {};
+  for (var expense in expenses) {
+    // hanya tahun + bulan
+    final monthKey = DateTime(expense.date.year, expense.date.month);
+    totals[monthKey] = (totals[monthKey] ?? 0) + expense.amount;
+  }
+  return totals;
+}
+
 }

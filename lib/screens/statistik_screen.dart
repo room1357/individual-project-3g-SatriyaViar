@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:pemrograman_mobile/screens/advanced_expense_list_screen.dart';
 import 'package:pemrograman_mobile/utils/category_utils.dart';
 import '../models/expense.dart';
 import '../models/category.dart';
 import '../models/expense_manager.dart';
 import '../utils/formater.dart';
+import 'package:intl/intl.dart';
 
-class StatisticsScreen extends StatelessWidget {
+class StatisticsScreen extends StatefulWidget {
   final List<Expense> expenses;
   final List<Category> categories;
 
@@ -18,20 +18,26 @@ class StatisticsScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final categoryTotals = ExpenseManager.getTotalByCategory(expenses);
-    final total = expenses.fold<double>(0, (sum, e) => sum + e.amount);
+  State<StatisticsScreen> createState() => _StatisticsScreenState();
+}
 
-    final colors = [
-      Colors.blue,
-      Colors.red,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.teal,
-      Colors.brown,
-      Colors.pink,
-    ];
+class _StatisticsScreenState extends State<StatisticsScreen> {
+  bool isDaily = true; // toggle harian/bulanan
+
+  @override
+  Widget build(BuildContext context) {
+    final categoryTotals = ExpenseManager.getTotalByCategory(widget.expenses, widget.categories);
+    final averagedaily = ExpenseManager.getAverageDaily(widget.expenses);
+
+    // 🔹 Data sesuai toggle
+    final data =
+        isDaily
+            ? ExpenseManager.getTotalByDay(
+              widget.expenses,
+            ) // Map<DateTime, double>
+            : ExpenseManager.getTotalByMonth(
+              widget.expenses,
+            ); // Map<DateTime, double>
 
     return Scaffold(
       appBar: AppBar(
@@ -44,10 +50,10 @@ class StatisticsScreen extends StatelessWidget {
               : ListView(
                 padding: const EdgeInsets.all(16.0),
                 children: [
-                  // 🔹 Total Semua dengan Gradient Card
+                  // 🔹 Total Semua
                   Container(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
+                      gradient: const LinearGradient(
                         colors: [Colors.purple, Colors.deepPurpleAccent],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -69,13 +75,16 @@ class StatisticsScreen extends StatelessWidget {
                           "Total Pengeluaran",
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Lucida Sans',
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          formatRupiah(total),
+                          formatRupiah(
+                            ExpenseManager.calculateTotal(widget.expenses),
+                          ),
                           style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
@@ -85,10 +94,9 @@ class StatisticsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 15),
 
-                  const SizedBox(height: 20),
-
-                  // 🔹 Pie Chart + Legend
+                  // 🔹 Pie Chart Distribusi Kategori
                   Card(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -99,10 +107,10 @@ class StatisticsScreen extends StatelessWidget {
                       child: Column(
                         children: [
                           const Text(
-                            "Distribusi Kategori",
+                            "Distribusi Pengeluaran per Kategori",
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -111,66 +119,61 @@ class StatisticsScreen extends StatelessWidget {
                             child: PieChart(
                               PieChartData(
                                 sections:
-                                    categoryTotals.entries
-                                        .toList()
-                                        .asMap()
-                                        .entries
-                                        .map((entry) {
-                                          final catName = entry.value.key;
-                                          final amount = entry.value.value;
+                                    categoryTotals.entries.map((entry) {
+                                      final catName = entry.key;
+                                      final amount = entry.value;
+                                      final percentage = (amount /
+                                              ExpenseManager.calculateTotal(
+                                                widget.expenses,
+                                              ) *
+                                              100)
+                                          .toStringAsFixed(1);
 
-                                          return PieChartSectionData(
-                                            color:
-                                              CategoryUtils.getCategoryColor(catName),
-                                            value: amount,
-                                            title:
-                                                "${((amount / total) * 100).toStringAsFixed(1)}%",
-                                            radius: 70,
-                                            titleStyle: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 12,
-                                            ),
-                                          );
-                                        })
-                                        .toList(),
+                                      return PieChartSectionData(
+                                        color: CategoryUtils.getCategoryColor(
+                                          catName,
+                                        ),
+                                        value: amount,
+                                        title: "$percentage%",
+                                        radius: 70,
+                                        titleStyle: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      );
+                                    }).toList(),
                                 centerSpaceRadius: 40,
                               ),
                             ),
                           ),
-
                           const SizedBox(height: 20),
 
-                          // 🔹 Legend warna kategori
+                          // 🔹 Legend
                           Wrap(
                             spacing: 12,
                             runSpacing: 8,
                             children:
-                                categoryTotals.entries
-                                    .toList()
-                                    .asMap()
-                                    .entries
-                                    .map((entry) {
-                                      final index = entry.key;
-                                      final catName = entry.value.key;
-                                      return Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            width: 14,
-                                            height: 14,
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  CategoryUtils.getCategoryColor(catName),
-                                              shape: BoxShape.circle,
-                                            ),
+                                categoryTotals.entries.map((entry) {
+                                  final catName = entry.key;
+                                  return Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 14,
+                                        height: 14,
+                                        decoration: BoxDecoration(
+                                          color: CategoryUtils.getCategoryColor(
+                                            catName,
                                           ),
-                                          const SizedBox(width: 6),
-                                          Text(catName),
-                                        ],
-                                      );
-                                    })
-                                    .toList(),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(catName),
+                                    ],
+                                  );
+                                }).toList(),
                           ),
                         ],
                       ),
@@ -178,19 +181,59 @@ class StatisticsScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 20),
-
-                  // 🔹 Rincian Per Kategori
-                  const Text(
-                    "Rincian per Kategori",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, ),
+                  Divider(height: 20, color: Colors.black, thickness: 2),
+                  const SizedBox(height: 20),
+                  // 🔹 Toggle Harian / Bulanan
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Bulanan",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontFamily: "Lucida Sans",
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Switch(
+                        value: isDaily,
+                        onChanged: (val) {
+                          setState(() {
+                            isDaily = val;
+                          });
+                        },
+                      ),
+                      const Text(
+                        "Harian",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontFamily: "Lucida Sans",
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
+
+                  const SizedBox(height: 20),
+                  // 🔹 Judul List Data
+                  Text(
+                    isDaily ? "Pengeluaran Harian" : "Pengeluaran Bulanan",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
                   const SizedBox(height: 10),
 
-                  ...categoryTotals.entries.toList().asMap().entries.map((
-                    entry,
-                  ) {
-                    final catName = entry.value.key;
-                    final amount = entry.value.value;
+                  // 🔹 List Data (Harian/Bulanan)
+                  ...data.entries.map((entry) {
+                    final label =
+                        isDaily
+                            ? formatTanggal(entry.key)
+                            : formatBulan(entry.key);
+                    final amount = entry.value;
 
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -198,26 +241,23 @@ class StatisticsScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 2,
-                      child:ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: CategoryUtils.getCategoryColor(
-                            catName,
-                          ),
-                          child: Icon(
-                            CategoryUtils.getCategoryIcon(
-                              catName,
-                            ),
-                            color: Colors.white,
-                          ),
+                      child: ListTile(
+                        leading: Icon(
+                          isDaily ? Icons.calendar_today : Icons.calendar_month,
+                          color: Colors.blue,
                         ),
-                        title: Text(catName),
+                        title: Text(
+                          label,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         trailing: Text(
                           formatRupiah(amount),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                             color: Colors.green,
-                          )),
+                          ),
+                        ),
                       ),
                     );
                   }),

@@ -90,11 +90,11 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatCard('Total', _calculateTotal(filteredExpenses)),
+                _buildStatCard('Total', formatRupiah(ExpenseManager.calculateTotal(filteredExpenses))),
                 _buildStatCard('Jumlah', '${filteredExpenses.length} item'),
                 _buildStatCard(
                   'Rata-rata',
-                  _calculateAverage(filteredExpenses),
+                  formatRupiah(ExpenseManager.calculateAverage(filteredExpenses)),
                 ),
               ],
             ),
@@ -203,18 +203,6 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
     );
   }
 
-  String _calculateTotal(List<Expense> expenses) {
-    double total = expenses.fold(0, (sum, expense) => sum + expense.amount);
-    return formatRupiah(total);
-  }
-
-  String _calculateAverage(List<Expense> expenses) {
-    if (expenses.isEmpty) return 'Rp 0';
-    double average =
-        expenses.fold(0.0, (sum, expense) => sum + expense.amount) /
-        expenses.length;
-    return formatRupiah(average);
-  }
 
   // Method untuk menampilkan detail pengeluaran dalam dialog
   void _showExpenseDetails(BuildContext context, Expense expense) {
