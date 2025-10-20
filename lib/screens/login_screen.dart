@@ -1,92 +1,159 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
+import '../Services/auth_services.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  Future<void> _handleLogin() async {
+    // Validasi form sederhana
+    if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
+      setState(() => _errorMessage = 'Username dan password wajib diisi.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    // Load data user dari SharedPreferences
+    await _authService.loadData();
+
+    // Coba login pakai username
+    final success = await _authService.signIn(
+      _usernameController.text.trim(),
+      _passwordController.text.trim(),
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login berhasil!')),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } else {
+      setState(() {
+        _errorMessage = 'Username atau password salah!';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Masuk'),
-        backgroundColor: Colors.blue,
-      ),
+      appBar: AppBar(title: const Text('Masuk'), backgroundColor: Colors.blue),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.all(16.0),
+        child: ListView(
           children: [
-            // Logo aplikasi
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.person, size: 50, color: Colors.white),
-            ),
-            SizedBox(height: 32),
+            const SizedBox(height: 40),
 
-            // Field username
+            // Logo
+            Center(
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: const BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.person, size: 50, color: Colors.white),
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Username field
             TextField(
-              decoration: InputDecoration(
+              controller: _usernameController,
+              decoration: const InputDecoration(
                 labelText: 'Username',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.person),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-            // Field password
+            // Password field
             TextField(
+              controller: _passwordController,
               obscureText: true,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Password',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.lock),
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // Pesan error (jika ada)
+            if (_errorMessage != null)
+              Text(
+                _errorMessage!,
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+
+            const SizedBox(height: 16),
 
             // Tombol login
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // Navigasi ke HomeScreen dengan pushReplacement
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  );
-                },
+                onPressed: _isLoading ? null : _handleLogin,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: Text(
-                  'Login',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'Login',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
-            SizedBox(height: 16),
 
-            // Link ke halaman register
+            const SizedBox(height: 16),
+
+            // Link ke Register
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("Belum punya akun? "),
+                const Text("Belum punya akun? "),
                 TextButton(
                   onPressed: () {
-                    // Navigasi ke RegisterScreen dengan push
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const RegisterScreen(),
+                      ),
                     );
                   },
-                  child: Text('Daftar'),
+                  child: const Text('Daftar'),
                 ),
               ],
             ),
