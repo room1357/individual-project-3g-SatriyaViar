@@ -14,7 +14,7 @@ class AuthService {
 
   UserAccount? get currentUser => _currentUser;
 
-  // Load data dari SharedPreferences
+  // 🔹 Load data dari SharedPreferences
   Future<void> loadData() async {
     final prefs = await SharedPreferences.getInstance();
     final usersJson = prefs.getString('user_list');
@@ -30,7 +30,7 @@ class AuthService {
     }
   }
 
-  // Register user baru
+  // 🔹 Register user baru (cek username, bukan email)
   Future<bool> registerUser({
     required String username,
     required String email,
@@ -38,7 +38,8 @@ class AuthService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
-    final exists = _users.any((u) => u.email == email);
+    // Pastikan username belum dipakai
+    final exists = _users.any((u) => u.username == username);
     if (exists) return false;
 
     final newUser = UserAccount(
@@ -52,17 +53,20 @@ class AuthService {
     _currentUser = newUser;
 
     await prefs.setString(
-        'user_list', jsonEncode(_users.map((e) => e.toMap()).toList()));
+      'user_list',
+      jsonEncode(_users.map((e) => e.toMap()).toList()),
+    );
     await prefs.setString('active_user', jsonEncode(newUser.toMap()));
     return true;
   }
 
-  // Login user
-  Future<bool> signIn(String username,String password) async {
+  // 🔹 Login user (berdasarkan username)
+  Future<bool> signIn(String username, String password) async {
     final prefs = await SharedPreferences.getInstance();
     try {
       final foundUser = _users.firstWhere(
-          (u) => u.username == username && u.password == password);
+        (u) => u.username == username && u.password == password,
+      );
       _currentUser = foundUser;
       await prefs.setString('active_user', jsonEncode(foundUser.toMap()));
       return true;
@@ -71,14 +75,26 @@ class AuthService {
     }
   }
 
-  // Logout user
+  // 🔹 Logout user
   Future<void> signOut() async {
     final prefs = await SharedPreferences.getInstance();
     _currentUser = null;
     await prefs.remove('active_user');
   }
 
-  // Update data user aktif
+  // 🔹 Ambil user yang sedang aktif
+  Future<UserAccount?> getCurrentUser() async {
+    if (_currentUser != null) return _currentUser;
+
+    final prefs = await SharedPreferences.getInstance();
+    final currentJson = prefs.getString('active_user');
+    if (currentJson != null) {
+      _currentUser = UserAccount.fromMap(jsonDecode(currentJson));
+    }
+    return _currentUser;
+  }
+
+  // 🔹 Update data profil user aktif
   Future<void> updateProfile(UserAccount updatedUser) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -88,7 +104,9 @@ class AuthService {
       _currentUser = updatedUser;
 
       await prefs.setString(
-          'user_list', jsonEncode(_users.map((e) => e.toMap()).toList()));
+        'user_list',
+        jsonEncode(_users.map((e) => e.toMap()).toList()),
+      );
       await prefs.setString('active_user', jsonEncode(updatedUser.toMap()));
     }
   }

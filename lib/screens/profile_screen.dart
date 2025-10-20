@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../Services/auth_services.dart';
-import 'home_screen.dart';
+import '../models/user.dart';
+import 'login_screen.dart';
+import 'edit_profil_screen.dart';
+import 'change_password_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -11,8 +15,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
-  String? username;
-  String? email;
+  UserAccount? _currentUser;
 
   @override
   void initState() {
@@ -21,74 +24,133 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserData() async {
-    await _authService.loadData(); // pastikan data sudah diload
-    final currentUser = await _authService.getCurrentUser();
-
-    if (currentUser != null && mounted) {
+    await _authService.loadData();
+    final user = await _authService.getCurrentUser();
+    if (mounted) {
       setState(() {
-        username = currentUser.username;
-        email = currentUser.email;
+        _currentUser = user;
       });
     }
   }
 
-  void _logout() async {
-    await _authService.logout();
+  Future<void> _logout() async {
+    await _authService.signOut();
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
+    );
+  }
+
+  Future<void> _navigateToEditProfile() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const EditProfilScreen()),
+    );
+    if (result == true) _loadUserData(); // reload setelah update
+  }
+
+  Future<void> _navigateToChangePassword() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final user = _currentUser;
+
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Profil'),
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Profil Pengguna',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: Colors.blue,
+        actions: [
+          IconButton(
+            onPressed: _logout,
+            icon: const Icon(Icons.logout),
+            tooltip: 'Keluar',
+          ),
+        ],
       ),
-      body: username == null
+      body: user == null
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(20.0),
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircleAvatar(
-                    radius: 50,
-                    child: Icon(Icons.person, size: 50),
+                  const SizedBox(height: 30),
+                  // 🧩 Foto profil dinamis
+                  CircleAvatar(
+                    radius: 55,
+                    backgroundColor: Colors.blue[100],
+                    backgroundImage: user.profileImage != null &&
+                            user.profileImage!.isNotEmpty
+                        ? FileImage(File(user.profileImage!))
+                        : null,
+                    child: user.profileImage == null ||
+                            user.profileImage!.isEmpty
+                        ? const Icon(Icons.person, size: 60, color: Colors.blue)
+                        : null,
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    username!,
-                    style: const TextStyle(
-                      fontSize: 24,
+                    user.username,
+                    style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
+                  const SizedBox(height: 8),
                   Text(
-                    email ?? '-',
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                    user.email,
+                    style: const TextStyle(color: Colors.grey, fontSize: 16),
                   ),
                   const SizedBox(height: 30),
-                  ElevatedButton.icon(
-                    onPressed: _logout,
-                    icon: const Icon(Icons.logout),
-                    label: const Text('Keluar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
+                  Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      // nanti bisa diarahkan ke EditProfileScreen
-                    },
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Edit Profil'),
+                    elevation: 3,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 20),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            leading:
+                                const Icon(Icons.edit, color: Colors.blueAccent),
+                            title: const Text('Edit Profil'),
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 16,
+                            ),
+                            onTap: _navigateToEditProfile,
+                          ),
+                          const Divider(),
+                          ListTile(
+                            leading:
+                                const Icon(Icons.lock, color: Colors.orange),
+                            title: const Text('Ubah Password'),
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 16,
+                            ),
+                            onTap: _navigateToChangePassword,
+                          ),
+                          const Divider(),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),

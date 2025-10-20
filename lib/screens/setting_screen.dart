@@ -52,13 +52,6 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           const Divider(),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context), // balik ke Home
-              child: const Text("Kembali"),
-            ),
-          ),
         ],
       ),
     );

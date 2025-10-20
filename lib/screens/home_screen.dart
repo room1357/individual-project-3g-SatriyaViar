@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:pemrograman_mobile/models/category_manager.dart';
 import 'package:pemrograman_mobile/models/expense_manager.dart';
@@ -10,6 +9,7 @@ import 'expense_list_screen.dart';
 import 'profile_screen.dart';
 import 'message_screen.dart';
 import 'setting_screen.dart';
+import '../Services/auth_services.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -22,15 +22,20 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.blue,
         actions: [
           IconButton(
-            onPressed: () {
-              // Logout dengan pushAndRemoveUntil
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              final auth = AuthService();
+              await auth
+                  .signOut(); // Hapus sesi login dari SharedPreferences
+
+              // Kembali ke halaman login, dan hapus semua route sebelumnya
+              if (!context.mounted) return; // pastikan context masih aktif
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                (route) => false, // Hapus semua route sebelumnya
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
               );
             },
-            icon: Icon(Icons.logout),
           ),
         ],
       ),
