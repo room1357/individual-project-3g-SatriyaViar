@@ -5,7 +5,11 @@ import '../models/expense.dart';
 import '../models/category.dart';
 import '../models/expense_manager.dart';
 import '../utils/formater.dart';
-import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
+import 'package:csv/csv.dart';
+import 'package:path_provider/path_provider.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final List<Expense> expenses;
@@ -24,12 +28,186 @@ class StatisticsScreen extends StatefulWidget {
 class _StatisticsScreenState extends State<StatisticsScreen> {
   bool isDaily = true; // toggle harian/bulanan
 
+  Future<void> _exportPDF() async {
+    final pdf = pw.Document();
+    final Directory dir = await getApplicationDocumentsDirectory();
+    final file = File("${dir.path}/laporan_pengeluaran.pdf");
+
+    // Ambil semua data
+    final categoryTotals = ExpenseManager.getTotalByCategory(
+      widget.expenses,
+      widget.categories,
+    );
+    final dailyTotals = ExpenseManager.getTotalByDay(widget.expenses);
+    final monthlyTotals = ExpenseManager.getTotalByMonth(widget.expenses);
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build:
+            (context) => [
+              pw.Center(
+                child: pw.Text(
+                  "Laporan Pengeluaran",
+                  style: pw.TextStyle(
+                    fontSize: 22,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ),
+              pw.SizedBox(height: 20),
+
+              // Bagian 1: Rincian Per Kategori
+              pw.Text(
+                "Rincian Per Kategori:",
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
+              pw.TableHelper.fromTextArray(
+                headers: ["Kategori", "Total"],
+                data:
+                    categoryTotals.entries
+                        .map((e) => [e.key, formatRupiah(e.value)])
+                        .toList(),
+              ),
+
+              pw.SizedBox(height: 20),
+
+              // Bagian 2: Rincian Bulanan
+              pw.Text(
+                "Rincian Bulanan:",
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
+              pw.TableHelper.fromTextArray(
+                headers: ["Bulan", "Total"],
+                data:
+                    monthlyTotals.entries
+                        .map((e) => [formatBulan(e.key), formatRupiah(e.value)])
+                        .toList(),
+              ),
+
+              pw.SizedBox(height: 20),
+
+              // Bagian 3: Rincian Harian
+              pw.Text(
+                "Rincian Harian:",
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
+              pw.TableHelper.fromTextArray(
+                headers: ["Tanggal", "Total"],
+                data:
+                    dailyTotals.entries
+                        .map(
+                          (e) => [formatTanggal(e.key), formatRupiah(e.value)],
+                        )
+                        .toList(),
+              ),
+
+              pw.SizedBox(height: 20),
+              pw.Text(
+                "Dibuat pada: ${DateTime.now()}",
+                style: pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+              ),
+            ],
+      ),
+    );
+
+    await file.writeAsBytes(await pdf.save());
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("✅ PDF berhasil diekspor ke: ${file.path}")),
+    );
+  }
+
+  Future<void> _exportCSV() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File("${dir.path}/laporan_pengeluaran.csv");
+
+    final categoryTotals = ExpenseManager.getTotalByCategory(
+      widget.expenses,
+      widget.categories,
+    );
+    final dailyTotals = ExpenseManager.getTotalByDay(widget.expenses);
+    final monthlyTotals = ExpenseManager.getTotalByMonth(widget.expenses);
+
+    List<List<dynamic>> rows = [];
+
+    // Bagian 1: Rincian Kategori
+    rows.add(["Rincian Per Kategori"]);
+    rows.add(["Kategori", "Total"]);
+    for (var entry in categoryTotals.entries) {
+      rows.add([entry.key, formatRupiah(entry.value)]);
+    }
+
+    rows.add([]); // Baris kosong pemisah
+
+    // Bagian 2: Rincian Bulanan
+    rows.add(["Rincian Bulanan"]);
+    rows.add(["Bulan", "Total"]);
+    for (var entry in monthlyTotals.entries) {
+      rows.add([formatBulan(entry.key), formatRupiah(entry.value)]);
+    }
+
+    rows.add([]);
+
+    // Bagian 3: Rincian Harian
+    rows.add(["Rincian Harian"]);
+    rows.add(["Tanggal", "Total"]);
+    for (var entry in dailyTotals.entries) {
+      rows.add([formatTanggal(entry.key), formatRupiah(entry.value)]);
+    }
+
+    rows.add([]);
+    rows.add(["Dibuat pada", DateTime.now().toString()]);
+
+    // Convert ke format CSV
+    String csvData = const ListToCsvConverter().convert(rows);
+
+    await file.writeAsString(csvData);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("✅ CSV berhasil diekspor ke: ${file.path}")),
+    );
+  }
+
+  void _showExportOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder:
+          (context) => Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                title: const Text("Ekspor sebagai PDF"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _exportPDF();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.table_chart, color: Colors.blue),
+                title: const Text("Ekspor sebagai CSV"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _exportCSV();
+                },
+              ),
+            ],
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final categoryTotals = ExpenseManager.getTotalByCategory(widget.expenses, widget.categories);
-    final averagedaily = ExpenseManager.getAverageDaily(widget.expenses);
+    final categoryTotals = ExpenseManager.getTotalByCategory(
+      widget.expenses,
+      widget.categories,
+    );
 
-    // 🔹 Data sesuai toggle
+    // Data sesuai toggle
     final data =
         isDaily
             ? ExpenseManager.getTotalByDay(
@@ -43,6 +221,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       appBar: AppBar(
         title: const Text("Statistik Pengeluaran"),
         backgroundColor: Colors.blue,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: _showExportOptions,
+            tooltip: "Eksport Data",
+          ),
+        ],
       ),
       body:
           categoryTotals.isEmpty
@@ -50,7 +235,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               : ListView(
                 padding: const EdgeInsets.all(16.0),
                 children: [
-                  // 🔹 Total Semua
+                  // Total Semua
                   Container(
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
@@ -61,7 +246,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withAlpha(10),
                           blurRadius: 6,
                           offset: const Offset(2, 4),
                         ),
@@ -96,7 +281,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ),
                   const SizedBox(height: 15),
 
-                  // 🔹 Pie Chart Distribusi Kategori
+                  // Pie Chart Distribusi Kategori
                   Card(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -119,39 +304,46 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             child: PieChart(
                               PieChartData(
                                 sections:
-                                    categoryTotals.entries.map((entry) {
-                                      final catName = entry.key;
-                                      final amount = entry.value;
-                                      final percentage = (amount /
-                                              ExpenseManager.calculateTotal(
-                                                widget.expenses,
-                                              ) *
-                                              100)
-                                          .toStringAsFixed(1);
+                                    (categoryTotals.entries.toList()..sort(
+                                          (a, b) => b.value.compareTo(a.value),
+                                        )) // urutkan dari total terbesar
+                                        .map((entry) {
+                                          final catName = entry.key;
+                                          final amount = entry.value;
+                                          final percentage = (amount /
+                                                  ExpenseManager.calculateTotal(
+                                                    widget.expenses,
+                                                  ) *
+                                                  100)
+                                              .toStringAsFixed(1);
 
-                                      return PieChartSectionData(
-                                        color: CategoryUtils.getCategoryColor(
-                                          catName,
-                                        ),
-                                        value: amount,
-                                        title: "$percentage%",
-                                        radius: 70,
-                                        titleStyle: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                      );
-                                    }).toList(),
+                                          return PieChartSectionData(
+                                            color:
+                                                CategoryUtils.getCategoryColor(
+                                                  catName,
+                                                ),
+                                            value: amount,
+                                            title: "$percentage%",
+                                            radius: 80,
+                                            titleStyle: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
+                                          );
+                                        })
+                                        .toList(),
+
                                 centerSpaceRadius: 40,
                               ),
                             ),
                           ),
                           const SizedBox(height: 20),
 
-                          // 🔹 Legend
+                          // Legend
                           Wrap(
                             spacing: 12,
+                            alignment: WrapAlignment.center,
                             runSpacing: 8,
                             children:
                                 categoryTotals.entries.map((entry) {
@@ -183,7 +375,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   const SizedBox(height: 20),
                   Divider(height: 20, color: Colors.black, thickness: 2),
                   const SizedBox(height: 20),
-                  // 🔹 Toggle Harian / Bulanan
+                  // Toggle Harian / Bulanan
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -215,7 +407,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ),
 
                   const SizedBox(height: 20),
-                  // 🔹 Judul List Data
+                  // Judul List Data
                   Text(
                     isDaily ? "Pengeluaran Harian" : "Pengeluaran Bulanan",
                     style: const TextStyle(
@@ -227,7 +419,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
                   const SizedBox(height: 10),
 
-                  // 🔹 List Data (Harian/Bulanan)
+                  // List Data (Harian/Bulanan)
                   ...data.entries.map((entry) {
                     final label =
                         isDaily

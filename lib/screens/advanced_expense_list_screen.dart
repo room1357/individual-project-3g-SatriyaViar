@@ -4,6 +4,8 @@ import 'package:pemrograman_mobile/screens/edit_expanse.dart';
 import 'package:pemrograman_mobile/utils/category_utils.dart';
 import '../models/expense.dart';
 import '../models/expense_manager.dart';
+
+import '../models/category_manager.dart';
 import '../utils/formater.dart';
 
 class AdvancedExpenseListScreen extends StatefulWidget {
@@ -15,6 +17,7 @@ class AdvancedExpenseListScreen extends StatefulWidget {
 
 class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
   List<Expense> expenses = ExpenseManager.expenses;
+  final categories = CategoryManager.getAllCategories();
   List<Expense> filteredExpenses = [];
   String selectedCategory = 'Semua';
   TextEditingController searchController = TextEditingController();
@@ -55,32 +58,47 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
             height: 50,
             child: ListView(
               scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              children:
-                  [
-                        'Semua',
-                        'Makanan',
-                        'Transportasi',
-                        'Utilitas',
-                        'Hiburan',
-                        'Pendidikan',
-                      ]
-                      .map(
-                        (category) => Padding(
-                          padding: EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(category),
-                            selected: selectedCategory == category,
-                            onSelected: (selected) {
-                              setState(() {
-                                selectedCategory = category;
-                                _filterExpenses();
-                              });
-                            },
-                          ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                ...[
+                  'Semua',
+                  ...categories.map((c) => c.name).toSet(),
+                ].map((category) {
+                  final isSelected = selectedCategory == category;
+
+                  // Ambil warna kategori — khusus "Semua" kita kasih warna netral
+                  final categoryColor =
+                      category == 'Semua'
+                          ? Colors.grey
+                          : CategoryUtils.getCategoryColor(category);
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      label: Text(
+                        category,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black87,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
-                      )
-                      .toList(),
+                      ),
+                      selected: isSelected,
+                      selectedColor: categoryColor, // warna chip saat dipilih
+                      backgroundColor: categoryColor.withAlpha(
+                        236,
+                      ), // warna dasar chip
+                      checkmarkColor: Colors.white,
+                      onSelected: (selected) {
+                        setState(() {
+                          selectedCategory = category;
+                          _filterExpenses();
+                        });
+                      },
+                    ),
+                  );
+                }),
+              ],
             ),
           ),
 
@@ -90,11 +108,16 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatCard('Total', formatRupiah(ExpenseManager.calculateTotal(filteredExpenses))),
+                _buildStatCard(
+                  'Total',
+                  formatRupiah(ExpenseManager.calculateTotal(filteredExpenses)),
+                ),
                 _buildStatCard('Jumlah', '${filteredExpenses.length} item'),
                 _buildStatCard(
                   'Rata-rata',
-                  formatRupiah(ExpenseManager.calculateAverage(filteredExpenses)),
+                  formatRupiah(
+                    ExpenseManager.calculateAverage(filteredExpenses),
+                  ),
                 ),
               ],
             ),
@@ -203,7 +226,6 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
     );
   }
 
-
   // Method untuk menampilkan detail pengeluaran dalam dialog
   void _showExpenseDetails(BuildContext context, Expense expense) {
     showDialog(
@@ -251,7 +273,7 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
+                          color: Colors.black.withAlpha(15),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),

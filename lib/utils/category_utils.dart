@@ -15,7 +15,7 @@ class CategoryUtils {
       case 'pendidikan':
         return Icons.school;
       default:
-        return Icons.attach_money;
+        return Icons.category;
     }
   }
 
@@ -33,7 +33,9 @@ class CategoryUtils {
       case 'pendidikan':
         return Colors.blue;
       default:
-        return Colors.grey;
+        return Colors.primaries[
+          category.hashCode % Colors.primaries.length
+        ].shade700;
     }
   }
 }

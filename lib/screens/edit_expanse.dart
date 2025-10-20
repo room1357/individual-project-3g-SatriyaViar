@@ -75,7 +75,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Edit Pengeluaran"),
-        backgroundColor: Colors.orange,
+        backgroundColor: Colors.blue,
         elevation: 0,
       ),
       body: Padding(
@@ -145,7 +145,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
               const SizedBox(height: 16),
               // Dropdown Kategori
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 items: [
                   'Makanan',
                   'Transportasi',
