@@ -6,7 +6,7 @@ class UserAccount {
   final String username;
   final String email;
   final String password; // Dalam bentuk HASH
-  final String? profileImage; // path atau base64 string gambar profil
+  final String? profileImage;
 
   UserAccount({
     required this.id,
@@ -32,26 +32,25 @@ class UserAccount {
     );
   }
 
-
   static String _hashPassword(String password) {
     final bytes = utf8.encode(password);
     return sha256.convert(bytes).toString();
   }
 
+  // 🔹 tambahkan ini supaya bisa diakses dari luar
+  static String hashPassword(String password) => _hashPassword(password);
 
   bool verifyPassword(String inputPassword) {
     return password == _hashPassword(inputPassword);
   }
-
 
   Map<String, dynamic> toMap() => {
         'id': id,
         'username': username,
         'email': email,
         'password': password,
-        'profileImage': profileImage, // ✅ tambahkan
+        'profileImage': profileImage,
       };
-
 
   factory UserAccount.fromMap(Map<String, dynamic> map) {
     return UserAccount(
@@ -59,17 +58,15 @@ class UserAccount {
       username: map['username'],
       email: map['email'],
       password: map['password'],
-      profileImage: map['profileImage'], // ✅ tambahkan
+      profileImage: map['profileImage'],
     );
   }
 
-  /// 🔁 JSON encode/decode
   String toJson() => jsonEncode(toMap());
 
   factory UserAccount.fromJson(String source) =>
       UserAccount.fromMap(jsonDecode(source));
 
- 
   UserAccount copyWith({
     String? username,
     String? email,

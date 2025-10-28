@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
-import '../Services/auth_services.dart';
+import '../services/auth_services.dart';
+import '../models/user.dart'; // pastikan ini diimport
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,7 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _errorMessage;
 
   Future<void> _handleLogin() async {
-    // Validasi form sederhana
     if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
       setState(() => _errorMessage = 'Username dan password wajib diisi.');
       return;
@@ -30,10 +30,8 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
 
-    // Load data user dari SharedPreferences
     await _authService.loadData();
 
-    // Coba login pakai username
     final success = await _authService.signIn(
       _usernameController.text.trim(),
       _passwordController.text.trim(),
@@ -43,14 +41,26 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login berhasil!')),
-      );
+      // Ambil user yang sedang login
+      final UserAccount? currentUser = _authService.currentUser;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
+      if (currentUser != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Selamat datang, ${currentUser.username}!')),
+        );
+
+        // Navigasi ke HomeScreen sambil kirim data user
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(user: currentUser),
+          ),
+        );
+      } else {
+        setState(() {
+          _errorMessage = 'Terjadi kesalahan saat mengambil data pengguna.';
+        });
+      }
     } else {
       setState(() {
         _errorMessage = 'Username atau password salah!';
@@ -106,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Pesan error (jika ada)
+            // Pesan error
             if (_errorMessage != null)
               Text(
                 _errorMessage!,

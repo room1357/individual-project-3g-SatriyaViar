@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pemrograman_mobile/screens/login_screen.dart';
 import '../Services/auth_services.dart';
 import 'home_screen.dart';
 
@@ -41,7 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
   } else {
     ScaffoldMessenger.of(context).showSnackBar(

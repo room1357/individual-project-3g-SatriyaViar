@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'package:pemrograman_mobile/models/expense_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../models/user.dart';
+import '../models/shared_expenses.dart'; 
+import '../models/shared_expenses_manager.dart'; 
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -11,8 +14,10 @@ class AuthService {
   final _uuid = const Uuid();
   UserAccount? _currentUser;
   List<UserAccount> _users = [];
+  List<SharedExpense> _sharedExpenses = []; // daftar shared expense milik user
 
   UserAccount? get currentUser => _currentUser;
+  List<SharedExpense> get sharedExpenses => _sharedExpenses; 
 
   // 🔹 Load data dari SharedPreferences
   Future<void> loadData() async {
@@ -28,9 +33,50 @@ class AuthService {
     if (currentJson != null) {
       _currentUser = UserAccount.fromMap(jsonDecode(currentJson));
     }
+
+    // ⬅️ Sekalian load shared expenses
+    await loadUserSharedExpenses();
   }
 
-  // 🔹 Register user baru (cek username, bukan email)
+  // ✅ Tambahan: Load hanya shared expenses yang relevan dengan user aktif
+  Future<void> loadUserSharedExpenses() async {
+    if (_currentUser == null) return;
+    final manager = SharedExpenseManager();
+    final allExpenses = await manager.getAllExpenses();
+
+    // Filter hanya expense yang dibuat oleh user ini atau user termasuk member-nya
+    _sharedExpenses = allExpenses.where((e) =>
+        e.createdBy == _currentUser!.username ||
+        e.members.contains(_currentUser!.username)).toList();
+  }
+
+  // ✅ Ambil semua expense gabungan (personal + shared)
+Future<List<Map<String, dynamic>>> getCombinedExpenses() async {
+  final personal = ExpenseManager.expenses
+      .map((e) => {
+            'title': e.title,
+            'amount': e.amount,
+            'category': e.category,
+            'date': e.date,
+            'type': 'personal',
+          })
+      .toList();
+
+  final shared = _sharedExpenses
+      .map((s) => {
+            'title': s.title,
+            'amount': s.amount,
+            'category': 'Pengeluaran Bersama',
+            'date': s.date,
+            'type': 'shared',
+          })
+      .toList();
+
+  return [...personal, ...shared];
+}
+
+
+  // 🔹 Register user baru (hash password)
   Future<bool> registerUser({
     required String username,
     required String email,
@@ -38,15 +84,14 @@ class AuthService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Pastikan username belum dipakai
     final exists = _users.any((u) => u.username == username);
     if (exists) return false;
 
-    final newUser = UserAccount(
+    final newUser = UserAccount.create(
       id: _uuid.v4(),
       username: username,
       email: email,
-      password: password,
+      rawPassword: password,
     );
 
     _users.add(newUser);
@@ -60,15 +105,22 @@ class AuthService {
     return true;
   }
 
-  // 🔹 Login user (berdasarkan username)
+  // 🔹 Login user (dengan verifikasi hash)
   Future<bool> signIn(String username, String password) async {
     final prefs = await SharedPreferences.getInstance();
+
     try {
-      final foundUser = _users.firstWhere(
-        (u) => u.username == username && u.password == password,
-      );
+      final foundUser = _users.firstWhere((u) => u.username == username);
+      if (!foundUser.verifyPassword(password)) {
+        return false;
+      }
+
       _currentUser = foundUser;
       await prefs.setString('active_user', jsonEncode(foundUser.toMap()));
+
+      // ⬅️ Load shared expense setiap kali user login
+      await loadUserSharedExpenses();
+
       return true;
     } catch (_) {
       return false;
@@ -79,6 +131,7 @@ class AuthService {
   Future<void> signOut() async {
     final prefs = await SharedPreferences.getInstance();
     _currentUser = null;
+    _sharedExpenses = []; // ⬅️ Kosongkan juga shared expense
     await prefs.remove('active_user');
   }
 
@@ -90,6 +143,7 @@ class AuthService {
     final currentJson = prefs.getString('active_user');
     if (currentJson != null) {
       _currentUser = UserAccount.fromMap(jsonDecode(currentJson));
+      await loadUserSharedExpenses(); // ⬅️ Tambahkan di sini juga
     }
     return _currentUser;
   }
@@ -111,5 +165,6 @@ class AuthService {
     }
   }
 
+  // 🔹 Ambil semua user (misalnya untuk fitur "pengeluaran bersama")
   List<UserAccount> getAllUsers() => _users;
 }

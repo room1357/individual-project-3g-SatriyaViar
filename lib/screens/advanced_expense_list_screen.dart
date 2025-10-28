@@ -4,9 +4,11 @@ import 'package:pemrograman_mobile/screens/edit_expanse.dart';
 import 'package:pemrograman_mobile/utils/category_utils.dart';
 import '../models/expense.dart';
 import '../models/expense_manager.dart';
-
 import '../models/category_manager.dart';
 import '../utils/formater.dart';
+import '../models/shared_expenses.dart';
+import '../models/shared_expenses_manager.dart';
+import '../Services/auth_services.dart';
 
 class AdvancedExpenseListScreen extends StatefulWidget {
   const AdvancedExpenseListScreen({super.key});
@@ -25,24 +27,71 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
   @override
   void initState() {
     super.initState();
-    filteredExpenses = expenses;
+    _loadAllExpenses(); // 🔹 load semua data (personal + shared)
+  }
+
+  // 🔹 fungsi baru untuk meload semua data
+  Future<void> _loadAllExpenses() async {
+    // 🔹 1. Ambil user aktif lewat AuthService
+    final auth = AuthService();
+    final currentUser = await auth.getCurrentUser();
+    if (currentUser == null) {
+      print('⚠️ Tidak ada user aktif, tidak bisa memuat shared expenses.');
+      return;
+    }
+
+    // 🔹 2. Ambil expense pribadi (kode lama)
+    final personalExpenses = ExpenseManager.expenses;
+
+    //Load ulang shared expenses untuk user aktif
+    await auth.loadUserSharedExpenses();
+    final sharedExpenses = auth.sharedExpenses;
+
+    print('✅ Total personal: ${personalExpenses.length}');
+    print('✅ Total shared: ${sharedExpenses.length}');
+
+    // 🔹 4. Konversi SharedExpense → Expense
+    final sharedConverted =
+        sharedExpenses.map((s) {
+          return Expense(
+            id: s.date.millisecondsSinceEpoch.toString(), // unik
+            title: s.title,
+            amount: s.amount,
+            category: 'Pengeluaran Bersama',
+            description:
+                'Dibuat oleh ${s.createdBy} • Anggota: ${s.members.join(', ')}',
+            date: s.date,
+          );
+        }).toList();
+
+    setState(() {
+      expenses = [...personalExpenses, ...sharedConverted];
+      filteredExpenses = expenses;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Pengeluaran Advanced'),
+        title: const Text('Pengeluaran Advanced'),
         backgroundColor: Colors.blue,
+        actions: [
+          IconButton(
+            onPressed: _loadAllExpenses, // 🔹 tombol refresh manual
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Muat ulang data',
+          ),
+        ],
       ),
       body: Column(
         children: [
           // Search bar
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: TextField(
               controller: searchController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Cari pengeluaran...',
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
@@ -63,10 +112,10 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
                 ...[
                   'Semua',
                   ...categories.map((c) => c.name).toSet(),
+                  'Pengeluaran Bersama', // 🔹 tambahan kategori khusus
                 ].map((category) {
                   final isSelected = selectedCategory == category;
 
-                  // Ambil warna kategori — khusus "Semua" kita kasih warna netral
                   final categoryColor =
                       category == 'Semua'
                           ? Colors.grey
@@ -84,10 +133,8 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
                         ),
                       ),
                       selected: isSelected,
-                      selectedColor: categoryColor, // warna chip saat dipilih
-                      backgroundColor: categoryColor.withAlpha(
-                        236,
-                      ), // warna dasar chip
+                      selectedColor: categoryColor,
+                      backgroundColor: categoryColor.withAlpha(236),
                       checkmarkColor: Colors.white,
                       onSelected: (selected) {
                         setState(() {
@@ -104,7 +151,7 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
 
           // Statistics summary
           Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -127,13 +174,15 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
           Expanded(
             child:
                 filteredExpenses.isEmpty
-                    ? Center(child: Text('Tidak ada pengeluaran ditemukan'))
+                    ? const Center(
+                      child: Text('Tidak ada pengeluaran ditemukan'),
+                    )
                     : ListView.builder(
                       itemCount: filteredExpenses.length,
                       itemBuilder: (context, index) {
                         final expense = filteredExpenses[index];
                         return Card(
-                          margin: EdgeInsets.symmetric(
+                          margin: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 4,
                           ),
@@ -143,9 +192,7 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
                                 expense.category,
                               ),
                               child: Icon(
-                                CategoryUtils.getCategoryIcon(
-                                  expense.category,
-                                ), // ✅ pakai utils
+                                CategoryUtils.getCategoryIcon(expense.category),
                                 color: Colors.white,
                               ),
                             ),
@@ -155,7 +202,7 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
                             ),
                             trailing: Text(
                               expense.formattedAmount,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.red,
                                 fontSize: 16,
@@ -187,7 +234,7 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
           );
         },
         backgroundColor: Colors.blue,
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -217,16 +264,15 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
   Widget _buildStatCard(String label, String value) {
     return Column(
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         Text(
           value,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ],
     );
   }
 
-  // Method untuk menampilkan detail pengeluaran dalam dialog
   void _showExpenseDetails(BuildContext context, Expense expense) {
     showDialog(
       context: context,
@@ -249,7 +295,6 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Judul
                   Center(
                     child: Text(
                       expense.title.toUpperCase(),
@@ -264,8 +309,6 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Card konten
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -320,10 +363,7 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // Tombol aksi
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -381,7 +421,6 @@ class _AdvancedExpenseListScreenState extends State<AdvancedExpenseListScreen> {
     );
   }
 
-  // Widget helper biar rapi
   Widget _infoRow(
     IconData icon,
     String label,

@@ -10,6 +10,9 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
+import '../Services/auth_services.dart';
+import '../models/shared_expenses.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final List<Expense> expenses;
@@ -33,14 +36,31 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final Directory dir = await getApplicationDocumentsDirectory();
     final file = File("${dir.path}/laporan_pengeluaran.pdf");
 
-    // Ambil semua data
+    final auth = AuthService();
+    final sharedExpenses =
+        auth.sharedExpenses
+            .map(
+              (s) => Expense(
+                id: s.date.millisecondsSinceEpoch.toString(),
+                title: s.title,
+                amount: s.amount,
+                category: 'Pengeluaran Bersama',
+                description: 'Dibuat oleh ${s.createdBy}',
+                date: s.date,
+              ),
+            )
+            .toList();
+
+    final allExpenses = [...widget.expenses, ...sharedExpenses];
+
     final categoryTotals = ExpenseManager.getTotalByCategory(
-      widget.expenses,
+      allExpenses,
       widget.categories,
     );
-    final dailyTotals = ExpenseManager.getTotalByDay(widget.expenses);
-    final monthlyTotals = ExpenseManager.getTotalByMonth(widget.expenses);
+    final dailyTotals = ExpenseManager.getTotalByDay(allExpenses);
+    final monthlyTotals = ExpenseManager.getTotalByMonth(allExpenses);
 
+    // Menambahkan halaman PDF
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -57,7 +77,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
               pw.SizedBox(height: 20),
 
-              // Bagian 1: Rincian Per Kategori
+              // Rincian per kategori
               pw.Text(
                 "Rincian Per Kategori:",
                 style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
@@ -69,10 +89,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         .map((e) => [e.key, formatRupiah(e.value)])
                         .toList(),
               ),
-
               pw.SizedBox(height: 20),
 
-              // Bagian 2: Rincian Bulanan
+              // Rincian bulanan
               pw.Text(
                 "Rincian Bulanan:",
                 style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
@@ -84,10 +103,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         .map((e) => [formatBulan(e.key), formatRupiah(e.value)])
                         .toList(),
               ),
-
               pw.SizedBox(height: 20),
 
-              // Bagian 3: Rincian Harian
+              // Rincian harian
               pw.Text(
                 "Rincian Harian:",
                 style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
@@ -111,12 +129,43 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
     );
 
+    // Simpan file PDF
     await file.writeAsBytes(await pdf.save());
 
+    //Cek widget aktif
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("✅ PDF berhasil diekspor ke: ${file.path}")),
+    // Preview PDF
+    await file.writeAsBytes(await pdf.save());
+    if (!mounted) return;
+    _showPdfPreview(pdf);
+
+    // Info snackbar
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text("✅ PDF berhasil dibuat")));
+  }
+
+  void _showPdfPreview(pw.Document pdf) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => Scaffold(
+              appBar: AppBar(
+                title: const Text("Preview Laporan PDF"),
+                backgroundColor: Colors.deepPurple,
+              ),
+              body: PdfPreview(
+                build: (format) => pdf.save(),
+                canChangePageFormat: false,
+                canChangeOrientation: false,
+                canDebug: false,
+                allowPrinting: true,
+                allowSharing: true,
+              ),
+            ),
+      ),
     );
   }
 
@@ -202,19 +251,40 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Ambil data pribadi
+    final personalExpenses = widget.expenses;
+
+    // Ambil shared expenses milik user aktif dari AuthService
+    final auth = AuthService();
+    final sharedExpenses =
+        auth.sharedExpenses.map((s) {
+          return Expense(
+            id: s.date.millisecondsSinceEpoch.toString(),
+            title: s.title,
+            amount: s.amount,
+            category: 'Pengeluaran Bersama',
+            description:
+                'Dibuat oleh ${s.createdBy} • Anggota: ${s.members.join(', ')}',
+            date: s.date,
+          );
+        }).toList();
+
+    // Gabungkan semua data (pribadi + bersama)
+    final allExpenses = [...personalExpenses, ...sharedExpenses];
+
     final categoryTotals = ExpenseManager.getTotalByCategory(
-      widget.expenses,
+      allExpenses,
       widget.categories,
     );
 
-    // Data sesuai toggle
+    // Data sesuai toggle0
     final data =
         isDaily
             ? ExpenseManager.getTotalByDay(
-              widget.expenses,
+              allExpenses,
             ) // Map<DateTime, double>
             : ExpenseManager.getTotalByMonth(
-              widget.expenses,
+              allExpenses,
             ); // Map<DateTime, double>
 
     return Scaffold(
@@ -268,7 +338,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         const SizedBox(height: 8),
                         Text(
                           formatRupiah(
-                            ExpenseManager.calculateTotal(widget.expenses),
+                            ExpenseManager.calculateTotal(allExpenses),
                           ),
                           style: const TextStyle(
                             fontSize: 26,
